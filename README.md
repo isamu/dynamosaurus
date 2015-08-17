@@ -18,6 +18,11 @@ Or install it yourself as:
 
 ## Usage
 
+   require ""
+
+   Dynamodb.configure do |config|
+   end
+
 TODO: Write usage instructions here
 
 ## Contributing
