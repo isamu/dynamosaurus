@@ -1,7 +1,5 @@
 # Dynamosaurus
 
-TODO: Write a gem description
-
 ## Installation
 
 Add this line to your application's Gemfile:
@@ -18,12 +16,35 @@ Or install it yourself as:
 
 ## Usage
 
-   require ""
+   require "dynamosaurus"
 
-   Dynamodb.configure do |config|
+   class SimpleKVS < Dynamosaurus::DynamoBase
+     key :simple_key, :string
    end
 
-TODO: Write usage instructions here
+   aws_config = {
+     :access_key_id => 'aws_dynamodb_access_key_id',
+     :secret_access_key => 'aws_dynamodb_secret_access_key',
+     :region => 'us-west-1',
+   }
+   Aws.config = aws_config
+
+   # create
+   SimpleKVS.put({:simple_key => "key"}, {:num => 1})
+
+   # read
+   kvs = SimpleKVS.get("key")
+
+   # update
+   kvs.update({:test => 1})
+
+   # update
+   kvs.num = 100
+   kvs.save
+   
+   # delete
+   kvs.delete
+
 
 ## Contributing
 
