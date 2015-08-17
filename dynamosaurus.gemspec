@@ -9,7 +9,7 @@ Gem::Specification.new do |spec|
   spec.authors       = ["Isamu Arimoto"]
   spec.email         = ["isamu.a@gmail.com"]
   spec.description   = %q{Dynamodb simple ORM}
-  spec.summary       = %q{TODO: Write a gem summary}
+  spec.summary       = %q{Dynamodb simple ORM}
   spec.homepage      = ""
   spec.license       = "MIT"
 
