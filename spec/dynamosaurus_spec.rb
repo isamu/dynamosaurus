@@ -24,6 +24,39 @@ describe Dynamosaurus do
     expect(Dynamosaurus::VERSION).not_to be_nil
   end
 
+  it 'simple ordered kvs test' do
+    expect(SimpleOrderedKVS.first).to be_nil
+
+    SimpleOrderedKVS.put({:simple_key => "key", :simple_id => "1"})
+
+    kvs = SimpleOrderedKVS.first
+    expect(kvs.simple_key).to eq "key"
+    expect(kvs.simple_id).to eq "1"
+
+    SimpleOrderedKVS.get(["key", "1"])
+    expect(kvs.simple_id).to eq "1"
+
+    sleep 1
+    SimpleOrderedKVS.put({:simple_key => "key", :simple_id => "3"})
+    sleep 1
+    SimpleOrderedKVS.put({:simple_key => "key", :simple_id => "2"})
+    
+    orderd_items = SimpleOrderedKVS.get({
+      :index => "updated_at_index",
+      :simple_key => "key"
+    },{
+      :scan_index_forward => false,
+      :limit => 50,
+      })
+    expect(orderd_items[0].simple_id).to eq "2"
+    expect(orderd_items[1].simple_id).to eq "3"
+    expect(orderd_items[2].simple_id).to eq "1"
+
+    batch_items = SimpleOrderedKVS.batch_get_item({:simple_key => ["key"], :simple_id => ["1", "2", "3"]})
+    expect(orderd_items.size).to eq 3
+
+  end
+
   it 'simple kvs test' do
     expect(SimpleKVS.first).to be_nil
     expect(SimpleKVS.get("key")).to be_nil
@@ -84,8 +117,6 @@ describe Dynamosaurus do
     kvs.delete
     kvs = SimpleKVS.get("key3")
     expect(kvs).to be_nil
-
-
     
   end
 end

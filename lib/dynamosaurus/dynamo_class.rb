@@ -179,8 +179,7 @@ module Dynamosaurus
           hash.each do |k, v|
             keys[k] = {
               :comparison_operator => "EQ",
-              :attribute_value_list => 
-                [{ key_list[k.to_sym] => v.to_s}]
+              :attribute_value_list => [ v.to_s ]
             }
           end 
           Dynamosaurus.logger << "query local_index #{table_name} #{keys}"
@@ -236,8 +235,8 @@ module Dynamosaurus
           keys[get_key[0]].each do |key1|
             keys[get_key[2]].each do |key2|
               my_keys << { 
-                get_key[0].to_s => {get_key[1] => key1},
-                get_key[2].to_s => {get_key[3] => key2},
+                get_key[0].to_s => key1,
+                get_key[2].to_s => key2,
               }
             end
           end

@@ -16,8 +16,6 @@ class SimpleKVS < Dynamosaurus::DynamoBase
   :attribute_definitions => [
     {:attribute_name => "simple_key", :attribute_type => "S"},
   ]
-
-
 end
 
 class SimpleOrderedKVS < Dynamosaurus::DynamoBase
@@ -58,8 +56,6 @@ class SimpleOrderedKVS < Dynamosaurus::DynamoBase
       },
     },
   ]
-
-
 end
 
 class Comment < Dynamosaurus::DynamoBase
@@ -104,6 +100,4 @@ class Comment < Dynamosaurus::DynamoBase
           },
         },
       ]
-
-  
 end
