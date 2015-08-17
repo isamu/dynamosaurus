@@ -127,8 +127,7 @@ module Dynamosaurus
         value.each_with_index{|(k,v), i|
           keys[k] = {
             :comparison_operator => "EQ",
-            :attribute_value_list => 
-              [v.to_s]
+            :attribute_value_list => [v.to_s]
           }
         }
         Dynamosaurus.logger << "query index #{table_name} #{keys}"

@@ -123,4 +123,27 @@ describe Dynamosaurus do
     expect(kvs).to be_nil
     
   end
+
+  it 'comment test' do
+    expect(Comment.first).to be_nil
+    expect(Comment.get(["1", "1"])).to be_nil
+
+    Comment.put({:content_id => "1", :message_id => "1", :user_id => "abc"})
+    expect(Comment.first.content_id).to eq "1"
+
+    kvs = Comment.get(["1", "1"])
+    expect(kvs.content_id).to eq "1"
+
+    kvs = Comment.get(["2", "2"])
+    expect(kvs).to be_nil
+
+    Comment.put({:content_id => "1", :message_id => "2", :user_id => "abc"})
+    Comment.put({:content_id => "1", :message_id => "3", :user_id => "xyz"})
+    
+    # global secondary index
+    comments = Comment.get({:user_id => "abc"})
+    expect(comments.size).to eq 2
+
+  end
+
 end
