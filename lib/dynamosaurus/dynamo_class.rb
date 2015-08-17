@@ -68,7 +68,8 @@ module Dynamosaurus
       end
       
       def get_global_indexes
-        @global_index
+        (@global_index) ? @global_index : {}
+
       end
       def get_global_index name
         @global_index[name]
@@ -76,22 +77,27 @@ module Dynamosaurus
 
       def secondary_index index_name, range_key=nil, range_key_type=nil
         @secondary_index = {} if @secondary_index.nil?
-        @secondary_index[index_name.to_sym] = [range_key, Dynamosaurus::DynamoBase::TYPES[range_key_type]] if range_key
+        @secondary_index[index_name.to_sym] = [@key[0], @key[1], range_key, Dynamosaurus::DynamoBase::TYPES[range_key_type]] if range_key
       end
 
       def get_secondary_indexes
-        @secondary_index
+        @secondary_index ? @secondary_index : {}
       end
       def get_secondary_index name
         @secondary_index[name]
       end
 
       def get_index hash
-        get_global_indexes.each{|key, value|
+        get_secondary_indexes.merge(get_global_indexes).each{|key, value|
           if hash.size == 1 && hash.keys.first == value.first
             return {
               :index_name => key,
-              :keys => value
+              :keys => [value[0]]
+            }
+          else hash.size == 2 && hash.keys.sort == [value[0], value[2]].sort
+            return {
+              :index_name => key,
+              :keys => [value[0], value[2]]
             }
           end
         }
@@ -161,13 +167,14 @@ module Dynamosaurus
       
       def get_from_index hash, option={}
         if index = get_index(hash)
-          keys = {
-            index[:keys].first => {
+          keys = {}
+          
+          index[:keys].each do |key|
+            keys[key] = {
               :comparison_operator => "EQ",
-              :attribute_value_list => 
-                [{ index[:keys].last => hash[index[:keys].first].to_s}]
+              :attribute_value_list => [hash[key]]
             }
-          }
+          end
           Dynamosaurus.logger << "query index #{table_name} #{keys}"
           query keys, index[:index_name], option
         end
