@@ -1,5 +1,7 @@
 # Dynamosaurus
 
+Dynamosaurus is Amazon DynamoDB ORMapper.
+
 ## Installation
 
 Add this line to your application's Gemfile:
