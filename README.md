@@ -44,6 +44,42 @@ Or install it yourself as:
     
     # delete
     kvs.delete
+    
+    class SimpleOrderedKVS < Dynamosaurus::DynamoBase
+      key :simple_key, :string, :simple_id, :string
+      secondary_index :updated_at_index, :updated_at, :number
+    end
+    
+    # create
+    SimpleOrderedKVS.put({:simple_key => "key", :simple_id => "1"})
+    
+    # get
+    SimpleOrderedKVS.get(["key", "1"])
+    
+    # force use secondary index
+    SimpleOrderedKVS.get({
+      :index => "updated_at_index",
+      :simple_key => "key"
+    },{
+      :scan_index_forward => false,
+      :limit => 50,
+      })
+    
+    # automatically use secondary index
+    SimpleOrderedKVS.get({:simple_key => "key"})
+    
+    class Comment < Dynamosaurus::DynamoBase
+      key :content_id, :string, :message_id, :string
+      global_index :user_index, :user_id, :string
+    end      
+    
+    Comment.put({:content_id => "1", :message_id => "1", :user_id => "abc"})
+    Comment.put({:content_id => "1", :message_id => "2", :user_id => "abc"})
+    Comment.put({:content_id => "1", :message_id => "3", :user_id => "xyz"})
+    
+    # automatically use global index    
+    comments = Comment.get({:user_id => "abc"})
+
 
 
 ## Contributing

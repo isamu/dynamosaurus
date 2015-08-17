@@ -52,6 +52,9 @@ describe Dynamosaurus do
     expect(orderd_items[1].simple_id).to eq "3"
     expect(orderd_items[2].simple_id).to eq "1"
 
+    expect(SimpleOrderedKVS.get({:simple_key => "key"}).size).to eq 3
+
+
     batch_items = SimpleOrderedKVS.batch_get_item({:simple_key => ["key"], :simple_id => ["1", "2", "3"]})
     expect(orderd_items.size).to eq 3
 
