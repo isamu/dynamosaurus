@@ -10,7 +10,7 @@ Gem::Specification.new do |spec|
   spec.email         = ["isamu.a@gmail.com"]
   spec.description   = %q{Dynamodb simple ORM}
   spec.summary       = %q{Dynamodb simple ORM}
-  spec.homepage      = ""
+  spec.homepage      = "https://github.com/isamu/dynamosaurus"
   spec.license       = "MIT"
 
   spec.files         = `git ls-files`.split($/)
