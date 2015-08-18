@@ -31,6 +31,18 @@ Or install it yourself as:
     }
     Aws.config = aws_config
     
+    # create table
+    SimpleKVS.create_table
+
+    # create table using this schema    
+    # { :table_name=>"simplekvs_local", 
+    #   :key_schema=>[{:key_type=>"HASH", :attribute_name=>"simple_key"}
+    #   :attribute_definitions=>[{:attribute_name=>"simple_key", :attribute_type=>"S"}], 
+    #   :provisioned_throughput=>{:read_capacity_units=>10, :write_capacity_units=>10}}
+
+    # if add some options, 
+    # SimpleKVS.create_table({:provisioned_throughput => {:read_capacity_units=>100, :write_capacity_units=>10}})
+
     # create
     SimpleKVS.put({:simple_key => "key"}, {:num => 1})
     

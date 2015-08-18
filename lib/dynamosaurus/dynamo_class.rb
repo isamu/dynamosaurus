@@ -9,16 +9,20 @@ module Dynamosaurus
         subclasses
       end
 
-      def create_table
+      def create_tables
         tables = dynamo_db.list_tables.table_names
 
         Dynamosaurus::DynamoBase.all_models.each do |model_class|
           if tables.index(model_class.table_name).nil?
-            table = dynamo_db.create_table(
-              model_class.schema
-            )
+            model_class.create_table
           end
         end
+      end
+
+      def create_table option={}
+        dynamo_db.create_table(
+          schema.merge(option)
+        )
       end
 
       def tables

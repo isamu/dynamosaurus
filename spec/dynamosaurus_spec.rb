@@ -10,7 +10,7 @@ describe Dynamosaurus do
       :region => 'local_test',
     }
 
-    Dynamosaurus::DynamoBase.create_table
+    Dynamosaurus::DynamoBase.create_tables
   end
 
   after(:all) do  
