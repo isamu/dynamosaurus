@@ -15,7 +15,7 @@ module Dynamosaurus
         Dynamosaurus::DynamoBase.all_models.each do |model_class|
           if tables.index(model_class.table_name).nil?
             table = dynamo_db.create_table(
-              model_class.get_table_schema
+              model_class.schema
             )
           end
         end
@@ -52,12 +52,86 @@ module Dynamosaurus
        @key
       end
 
-      def table_schema schema = {}
-        @schema = schema
-      end
-
-      def get_table_schema
+      def schema
+        @schema = {}
         @schema[:table_name] = table_name
+        @schema[:key_schema] = []
+        @schema[:attribute_definitions] = []
+
+        @schema[:provisioned_throughput] = {
+          :read_capacity_units => 10,
+          :write_capacity_units => 10
+        }
+
+        @schema[:key_schema]  << { 
+          :key_type => "HASH",
+          :attribute_name => get_key[0].to_s
+        }
+        @schema[:attribute_definitions] << {:attribute_name => get_key[0].to_s, :attribute_type => get_key[1].to_s.upcase}
+
+        if get_key.size == 4
+          @schema[:key_schema]  << { 
+            :key_type => "RANGE",
+            :attribute_name => get_key[2].to_s
+          }
+          @schema[:attribute_definitions] << {:attribute_name => get_key[2].to_s, :attribute_type => get_key[3].to_s.upcase}
+        end
+        
+        unless get_global_indexes.empty?
+          @schema[:global_secondary_indexes] = []
+          get_global_indexes.each do |g_index|
+            index_schema = {
+              :index_name => g_index[0],
+              :key_schema => [],
+              :projection => {
+                :projection_type => "KEYS_ONLY",
+              },
+              :provisioned_throughput => {
+                :read_capacity_units => 10,
+                :write_capacity_units => 10
+              },
+            }
+            index_schema[:key_schema] << {
+              :key_type => "HASH",
+              :attribute_name => g_index[1][0]
+            }
+            @schema[:attribute_definitions] << {:attribute_name => g_index[1][0].to_s, :attribute_type => g_index[1][1].to_s.upcase}
+            if g_index[1].size == 4
+              index_schema[:key_schema] << {
+                :key_type => "RANGE",
+                :attribute_name => g_index[1][2]
+              }
+              @schema[:attribute_definitions] << {:attribute_name => g_index[1][2].to_s, :attribute_type => g_index[1][3].to_s.upcase}
+            end
+            
+            @schema[:global_secondary_indexes] << index_schema
+          end
+        end
+        unless get_secondary_indexes.empty?
+          @schema[:local_secondary_indexes] = []
+          get_secondary_indexes.each do |s_index_key, s_index_value|
+            index_schema = {
+              :index_name => s_index_key,
+              :key_schema => [],
+              :projection => {
+                :projection_type => "KEYS_ONLY",
+              },
+            }
+            index_schema[:key_schema] =[ 
+              {
+                :key_type => "HASH",
+                :attribute_name => s_index_value[0]
+              },
+              {
+                :key_type => "RANGE",
+                :attribute_name => s_index_value[2]
+              }
+            ]
+            @schema[:attribute_definitions] << {:attribute_name => s_index_value[2].to_s, :attribute_type => s_index_value[3].to_s.upcase}
+            @schema[:local_secondary_indexes] << index_schema
+          end
+        end
+
         @schema
       end
       
@@ -87,8 +161,12 @@ module Dynamosaurus
         @secondary_index[name]
       end
 
+      def get_indexes
+        get_secondary_indexes.merge(get_global_indexes)
+      end
+
       def get_index hash
-        get_secondary_indexes.merge(get_global_indexes).each{|key, value|
+        get_indexes.each{|key, value|
           if hash.size == 1 && hash.keys.first == value.first
             return {
               :index_name => key,
