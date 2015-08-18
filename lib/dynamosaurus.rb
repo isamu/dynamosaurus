@@ -7,4 +7,12 @@ module Dynamosaurus
   class << self
     attr_accessor :logger
   end
+
+  class BlackHole < BasicObject
+    def method_missing(method_name, *args)
+      nil
+    end
+  end
 end
+
+Dynamosaurus.logger =  Dynamosaurus::BlackHole.new

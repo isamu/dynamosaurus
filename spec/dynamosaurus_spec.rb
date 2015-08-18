@@ -4,7 +4,6 @@ describe Dynamosaurus do
   before(:all) do  
     ENV['DYNAMODB_SUFFIX'] = "_local"
 
-    Dynamosaurus::Logger.new('log/vm.log', :debug)
     Aws.config = {
       :endpoint => "http://localhost:8000",
       :region => 'local_test',
