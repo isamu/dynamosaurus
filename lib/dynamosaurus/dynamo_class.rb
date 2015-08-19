@@ -20,9 +20,9 @@ module Dynamosaurus
       end
 
       def create_table option={}
-        dynamo_db.create_table(
-          schema.merge(option)
-        )
+        schem = schema.merge(option)
+        Dynamosaurus.logger << "create table #{schem}"
+        dynamo_db.create_table(schem)
       end
 
       def tables
@@ -374,7 +374,7 @@ module Dynamosaurus
         
         new_hash = {}
         hash.each{|key, value|
-          new_hash[key] = value.to_s unless value.nil?
+          new_hash[key] = value unless value.nil?
         }
         num_hash.merge({:updated_at => Time.now.to_i}).each{|key, value|
           new_hash[key] = value.to_i unless value.nil?
