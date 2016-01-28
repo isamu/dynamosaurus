@@ -32,7 +32,7 @@ module Dynamosaurus
       end
 
       def table_name
-        name.downcase + (ENV['DYNAMODB_SUFFIX'] || "_local")
+        (@table_prefix || name.downcase.split("::").last) + (ENV['DYNAMODB_SUFFIX'] || "_local")
       end
       
       def dynamo_db
@@ -184,6 +184,10 @@ module Dynamosaurus
           end
         }
         nil
+      end
+
+      def table_prefix name
+        @table_prefix = name
       end
       
       def key_list
