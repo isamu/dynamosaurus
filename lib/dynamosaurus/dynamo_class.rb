@@ -317,6 +317,15 @@ module Dynamosaurus
         end
       end
 
+      def getOne value, option={}
+        data = get(value, option)
+        if data.nil? || data.empty?
+          nil
+        else
+          data.first
+        end
+      end
+
       def batch_get_item keys
         return nil if keys.nil? or keys.empty?
         Dynamosaurus.logger << "batch_get_item #{table_name} #{keys}"
