@@ -32,7 +32,7 @@ module Dynamosaurus
       end
 
       def table_name
-        if @table && @table[:name]
+        if @table && @table.has_key?(:name) && !@table[:name].empty?
           @table[:name].to_s
         else
           (@table_prefix || name.downcase.split("::").last) + (ENV['DYNAMODB_SUFFIX'] || "_local")
