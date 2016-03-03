@@ -1,7 +1,7 @@
 require 'spec_helper'
 
 describe Dynamosaurus do
-  before(:all) do  
+  before(:all) do
     ENV['DYNAMODB_SUFFIX'] = "_local"
 
     Aws.config = {
@@ -12,7 +12,7 @@ describe Dynamosaurus do
     Dynamosaurus::DynamoBase.create_tables
   end
 
-  after(:all) do  
+  after(:all) do
     connect = Dynamosaurus::DynamoBase.dynamo_db
     Dynamosaurus::DynamoBase.tables.each do |table_name|
       connect.delete_table(:table_name => table_name)
@@ -39,7 +39,7 @@ describe Dynamosaurus do
     SimpleOrderedKVS.put({:simple_key => "key", :simple_id => "3"})
     sleep 1
     SimpleOrderedKVS.put({:simple_key => "key", :simple_id => "2"})
-    
+
     orderd_items = SimpleOrderedKVS.get({
       :index => "updated_at_index",
       :simple_key => "key"
@@ -123,29 +123,67 @@ describe Dynamosaurus do
     kvs.delete
     kvs = SimpleKVS.get("key3")
     expect(kvs).to be_nil
-    
+
   end
 
-  it 'comment test' do
-    expect(Comment.first).to be_nil
-    expect(Comment.get(["1", "1"])).to be_nil
+  shared_examples_for 'Basic CRUD' do
+    it 'should work in a sequence' do
+      expect(Object.const_get(model_name.to_s).first).to be_nil
+      expect(Object.const_get(model_name.to_s).get(["1", "1"])).to be_nil
 
-    Comment.put({:content_id => "1", :message_id => "1", :user_id => "abc"})
-    expect(Comment.first.content_id).to eq "1"
+      Object.const_get(model_name.to_s).put({:content_id => "1", :message_id => "1", :user_id => "abc"})
+      expect(Object.const_get(model_name.to_s).first.content_id).to eq "1"
 
-    kvs = Comment.get(["1", "1"])
-    expect(kvs.content_id).to eq "1"
+      kvs = Object.const_get(model_name.to_s).get(["1", "1"])
+      expect(kvs.content_id).to eq "1"
 
-    kvs = Comment.get(["2", "2"])
-    expect(kvs).to be_nil
+      kvs = Object.const_get(model_name.to_s).get(["2", "2"])
+      expect(kvs).to be_nil
+    end
+  end
 
-    Comment.put({:content_id => "1", :message_id => "2", :user_id => "abc"})
-    Comment.put({:content_id => "1", :message_id => "3", :user_id => "xyz"})
-    
-    # global secondary index
-    comments = Comment.get({:user_id => "abc"})
-    expect(comments.size).to eq 2
+  describe 'global secondary index' do
+    it_should_behave_like 'Basic CRUD' do
+      let!(:model_name) { 'Comment' }
+    end
 
+    context 'when 2 records exist' do
+      before do
+        Comment.put({:content_id => "1", :message_id => "2", :user_id => "abc"})
+        Comment.put({:content_id => "1", :message_id => "3", :user_id => "xyz"})
+      end
+
+      subject { Comment.get({:user_id => "abc"}).size }
+
+      it{ is_expected.to eq 2 }
+    end
+  end
+
+  describe 'table options' do
+    context 'when table-name is given' do
+      class DynamoModelWithTableField < Dynamosaurus::DynamoBase
+        table name: 'table_name'
+        key :content_id, :string, :message_id, :string
+      end
+
+      it_should_behave_like 'Basic CRUD' do
+        let!(:model_name) { 'DynamoModelWithTableField' }
+      end
+
+      it { expect(DynamoModelWithTableField.table_name).to eq 'table_name' }
+    end
+
+    context 'when table-name is not given' do
+      class DynamoModelWithoutTableField < Dynamosaurus::DynamoBase
+        key :content_id, :string, :message_id, :string
+      end
+
+      it_should_behave_like 'Basic CRUD' do
+        let!(:model_name) { 'DynamoModelWithoutTableField' }
+      end
+
+      it { expect(DynamoModelWithoutTableField.table_name).to eq 'dynamomodelwithouttablefield_local' }
+    end
   end
 
 end

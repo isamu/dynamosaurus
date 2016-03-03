@@ -32,9 +32,13 @@ module Dynamosaurus
       end
 
       def table_name
-        (@table_prefix || name.downcase.split("::").last) + (ENV['DYNAMODB_SUFFIX'] || "_local")
+        if @table && @table[:name]
+          @table[:name].to_s
+        else
+          (@table_prefix || name.downcase.split("::").last) + (ENV['DYNAMODB_SUFFIX'] || "_local")
+        end
       end
-      
+
       def dynamo_db
         return @dynamo_db if @dynamo_db
         if Aws::config.empty?
@@ -47,11 +51,15 @@ module Dynamosaurus
         end
       end
 
+      def table options = {}
+        @table ||= options
+      end
+
       def key k, type, range_key=nil, range_key_type=nil
         @key = [k, Dynamosaurus::DynamoBase::TYPES[type]]
         @key << range_key << Dynamosaurus::DynamoBase::TYPES[range_key_type] if range_key
       end
-      
+
       def get_key
        @key
       end
@@ -67,20 +75,20 @@ module Dynamosaurus
           :write_capacity_units => 10
         }
 
-        @schema[:key_schema]  << { 
+        @schema[:key_schema]  << {
           :key_type => "HASH",
           :attribute_name => get_key[0].to_s
         }
         @schema[:attribute_definitions] << {:attribute_name => get_key[0].to_s, :attribute_type => get_key[1].to_s.upcase}
 
         if get_key.size == 4
-          @schema[:key_schema]  << { 
+          @schema[:key_schema]  << {
             :key_type => "RANGE",
             :attribute_name => get_key[2].to_s
           }
           @schema[:attribute_definitions] << {:attribute_name => get_key[2].to_s, :attribute_type => get_key[3].to_s.upcase}
         end
-        
+
         unless get_global_indexes.empty?
           @schema[:global_secondary_indexes] = []
           get_global_indexes.each do |g_index|
@@ -107,7 +115,7 @@ module Dynamosaurus
               }
               @schema[:attribute_definitions] << {:attribute_name => g_index[1][2].to_s, :attribute_type => g_index[1][3].to_s.upcase}
             end
-            
+
             @schema[:global_secondary_indexes] << index_schema
           end
         end
@@ -121,7 +129,7 @@ module Dynamosaurus
                 :projection_type => "KEYS_ONLY",
               },
             }
-            index_schema[:key_schema] =[ 
+            index_schema[:key_schema] =[
               {
                 :key_type => "HASH",
                 :attribute_name => s_index_value[0]
@@ -138,13 +146,13 @@ module Dynamosaurus
 
         @schema
       end
-      
+
       def global_index index_name, key, key_type, range_key=nil, range_key_type=nil
         @global_index = {} if @global_index.nil?
         @global_index[index_name] = [key, Dynamosaurus::DynamoBase::TYPES[key_type]]
         @global_index[index_name] << range_key <<  Dynamosaurus::DynamoBase::TYPES[range_key_type] if range_key
       end
-      
+
       def get_global_indexes
         (@global_index) ? @global_index : {}
 
@@ -189,7 +197,7 @@ module Dynamosaurus
       def table_prefix name
         @table_prefix = name
       end
-      
+
       def key_list
         keys = get_key + get_secondary_indexes.values.flatten
         list = {}
@@ -205,7 +213,7 @@ module Dynamosaurus
         return new_hash if hash.nil?
         hash
       end
-      
+
 
       def query_without_index value, option
         keys = {}
@@ -238,7 +246,7 @@ module Dynamosaurus
 
         item_key = get_item_key(value)
         Dynamosaurus.logger << "get_item #{table_name} #{item_key}"
-      
+
         res = dynamo_db.get_item(
           :table_name => table_name,
           :key => item_key
@@ -246,14 +254,14 @@ module Dynamosaurus
         if res.item
           new :data => res.item
         else
-          nil  
+          nil
         end
       end
-      
+
       def get_from_index hash, option={}
         if index = get_index(hash)
           keys = {}
-          
+
           index[:keys].each do |key|
             keys[key] = {
               :comparison_operator => "EQ",
@@ -273,7 +281,7 @@ module Dynamosaurus
               :comparison_operator => "EQ",
               :attribute_value_list => [ v.to_s ]
             }
-          end 
+          end
           Dynamosaurus.logger << "query local_index #{table_name} #{keys}"
           query keys, index, option
         end
@@ -335,7 +343,7 @@ module Dynamosaurus
           my_keys = []
           keys[get_key[0]].each do |key1|
             keys[get_key[2]].each do |key2|
-              my_keys << { 
+              my_keys << {
                 get_key[0].to_s => key1,
                 get_key[2].to_s => key2,
               }
@@ -349,7 +357,7 @@ module Dynamosaurus
               :keys => my_keys
             }
           })
-        
+
         if res.responses[table_name]
           return res.responses[table_name].map{|item|
             new :data => item
@@ -382,9 +390,9 @@ module Dynamosaurus
           }
         end
       end
-      
+
       def put hash, num_hash={}, return_values=nil
-        
+
         new_hash = {}
         hash.each{|key, value|
           new_hash[key] = value unless value.nil?
@@ -392,7 +400,7 @@ module Dynamosaurus
         num_hash.merge({:updated_at => Time.now.to_i}).each{|key, value|
           new_hash[key] = value.to_i unless value.nil?
         } if num_hash
-        
+
         res = dynamo_db.put_item(
           :table_name => table_name,
           :item => new_hash,
@@ -403,17 +411,17 @@ module Dynamosaurus
       def save hash, num_hash={}, return_values=nil
         put(hash, num_hash, return_values)
         my_keys = get_key
-        
+
         if my_keys.size == 4
           get([hash[my_keys[0]], hash[my_keys[2]]])
         else
           get(hash[my_keys[0]])
         end
       end
-      
+
       def add key=[], attribute_nums={}, options={}
         Dynamosaurus.logger << "update"
-        
+
         attribute_updates = {}
         attribute_nums.each do |k, v|
           attribute_updates[k.to_s] = {
@@ -421,10 +429,10 @@ module Dynamosaurus
             :action => "ADD"
           }
         end
-        
+
         class_key = get_key
         keys = {
-          class_key[0].to_sym => key.is_a?(Array) ? key[0] : key 
+          class_key[0].to_sym => key.is_a?(Array) ? key[0] : key
         }
         keys[class_key[2].to_sym] = key[1]  if class_key.size > 2
 
@@ -435,7 +443,7 @@ module Dynamosaurus
         }
         query = query.merge(options)
         res = dynamo_db.update_item(query)
-        
+
       end
 
       def delete_item value
