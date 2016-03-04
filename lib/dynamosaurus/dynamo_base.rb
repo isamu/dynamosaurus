@@ -6,11 +6,11 @@ module Dynamosaurus
       :string => :s,
       :number => :n
     }
-   
+
     def dynamo_db
       self.class.dynamo_db
     end
-  
+
     def initialize params
       data = params[:data] if params[:data]
       @data = Dynamosaurus::DynamoBase.res2hash(data)
@@ -19,7 +19,7 @@ module Dynamosaurus
     def table_name
       self.class.table_name
     end
-    
+
     def [] key
       @data[key]
     end
@@ -27,7 +27,7 @@ module Dynamosaurus
     def []=(key,value)
       @data[key] = value
     end
-    
+
     def data
       @data
     end
@@ -35,7 +35,7 @@ module Dynamosaurus
     def exist?
       ! @data.empty?
     end
-    
+
     def empty?
       @data.empty?
     end
@@ -43,7 +43,7 @@ module Dynamosaurus
     def try name
       @data[name.to_s]
     end
-    
+
     def method_missing(name, *params)
       name = name.to_s[0..-2] if name.to_s[-1] == "="
       if exist? and @data.has_key?(name.to_s)
@@ -56,7 +56,7 @@ module Dynamosaurus
         super
       end
     end
-    
+
     def key
       return @key if @key
       @key = self.class.get_key
@@ -88,7 +88,7 @@ module Dynamosaurus
           :action => "PUT"
         }
       end
-      
+
       query = {
         :table_name => self.class.table_name,
         :key => keys,
@@ -126,7 +126,7 @@ module Dynamosaurus
         }
         @data.delete(k.to_s)
       end
-      
+
       res = dynamo_db.update_item(
         :table_name => self.class.table_name,
         :key => keys,
