@@ -136,6 +136,42 @@ describe Dynamosaurus do
 
   end
 
+  it 'internel method test' do
+    conv_keys = SimpleOrderedKVS.conv_key_array({:simple_key => ["key1", "key2"], :simple_id => ["1", "2", "3"]})
+    expect(conv_keys).to eq [
+      {"simple_key"=>"key1", "simple_id"=>"1"}, {"simple_key"=>"key1", "simple_id"=>"2"}, {"simple_key"=>"key1", "simple_id"=>"3"},
+      {"simple_key"=>"key2", "simple_id"=>"1"}, {"simple_key"=>"key2", "simple_id"=>"2"}, {"simple_key"=>"key2", "simple_id"=>"3"}
+    ]
+
+    conv_keys = SimpleOrderedKVS.conv_key_array({:simple_key => "key", :simple_id => ["1", "2", "3"]})
+    expect(conv_keys).to eq [
+      {"simple_key"=>"key", "simple_id"=>"1"}, {"simple_key"=>"key", "simple_id"=>"2"}, {"simple_key"=>"key", "simple_id"=>"3"}
+    ]
+
+    conv_keys = SimpleOrderedKVS.conv_key_array({:simple_key => ["key1","key2"], :simple_id => "1"})
+    expect(conv_keys).to eq [
+      {"simple_key"=>"key1", "simple_id"=>"1"}, {"simple_key"=>"key2", "simple_id"=>"1"}
+    ]
+
+    conv_keys = SimpleOrderedKVS.conv_key_array({:simple_key => "key1", :simple_id => "1"})
+    expect(conv_keys).to eq [
+      {"simple_key"=>"key1", "simple_id"=>"1"}
+    ]
+
+    conv_keys = SimpleOrderedKVS.conv_key_array([{:simple_key => "key1", :simple_id => "1"}, {:simple_key => "key1", :simple_id => "2"}])
+    expect(conv_keys).to eq [
+      {"simple_key"=>"key1", "simple_id"=>"1"}, {"simple_key"=>"key1", "simple_id"=>"2"}
+    ]
+    conv_keys = SimpleOrderedKVS.conv_key_array(["key1", "1"])
+    expect(conv_keys).to eq [
+      {"simple_key"=>"key1", "simple_id"=>"1"}
+    ]
+    conv_keys = SimpleOrderedKVS.conv_key_array([["key1", "1"], ["key1", "2"]])
+    expect(conv_keys).to eq [
+      {"simple_key"=>"key1", "simple_id"=>"1"}, {"simple_key"=>"key1", "simple_id"=>"2"}
+    ]
+  end
+
   shared_examples_for 'Basic CRUD' do
     it 'should work in a sequence' do
       expect(Object.const_get(model_name.to_s).first).to be_nil

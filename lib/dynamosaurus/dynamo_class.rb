@@ -334,20 +334,47 @@ module Dynamosaurus
         end
       end
 
+      def get_orderd_key_from_hash hash
+        get_orderd_key( (hash[get_key[0].to_sym] || hash[get_key[0].to_s]),
+                       (hash[get_key[2].to_sym] || hash[get_key[2].to_s]))
+      end
+
+      def get_orderd_key_from_array array
+        get_orderd_key(array[0], array[1])
+      end
+
+      def get_orderd_key value1, value2
+        {
+          get_key[0].to_s => value1,
+            get_key[2].to_s => value2
+        }
+      end
+
       def conv_key_array keys
         if get_key.size == 2
           keys.map{|_key| {get_key[0].to_s => _key.to_s } }
         else
-          _keys = []
-          keys[get_key[0]].each do |key1|
-            keys[get_key[2]].each do |key2|
-              _keys << {
-                get_key[0].to_s => key1,
-                get_key[2].to_s => key2,
-              }
+          if keys.is_a?(Array)
+            if keys[0].is_a?(Array)
+              keys.map{|key| get_orderd_key_from_array(key)}
+            elsif keys[0].is_a?(Hash)
+              keys.map{|key| get_orderd_key_from_hash(key)}
+            else
+              [get_orderd_key_from_array(keys)]
             end
+          else
+            _keys = []
+            ((p_key = keys[get_key[0]]).is_a?(Array) ? p_key : [p_key]).each do |key1|
+              if (r_key = keys[get_key[2]]).is_a?(Array)
+                r_key.each do |key2|
+                  _keys << get_orderd_key(key1, key2)
+                end
+              else
+                _keys << get_orderd_key(key1, r_key)
+              end
+            end
+            _keys
           end
-          _keys
         end
       end
 
