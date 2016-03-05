@@ -55,11 +55,21 @@ describe Dynamosaurus do
 
 
     batch_items = SimpleOrderedKVS.batch_get_item({:simple_key => ["key"], :simple_id => ["1", "2", "3"]})
-    expect(orderd_items.size).to eq 3
+    expect(batch_items.size).to eq 3
 
     kvs = SimpleOrderedKVS.first
     kvs2 = SimpleOrderedKVS.get({:simple_key => kvs.simple_key, :updated_at => kvs.updated_at})
     expect(kvs.simple_id).to eq kvs2[0].simple_id
+
+    put_items = [{simple_key: "key", simple_id: "a"}, {simple_key: "key", simple_id: "b"}]
+    delete_keys = {simple_key: ["key"], simple_id: ["1", "2"]}
+    batch_put_items = SimpleOrderedKVS.batch_write_item(put_items, delete_keys)
+
+    batch_items = SimpleOrderedKVS.batch_get_item({:simple_key => ["key"], :simple_id => ["a", "b", "c"]})
+    expect(batch_items.size).to eq 2
+
+    batch_items = SimpleOrderedKVS.batch_get_item({:simple_key => ["key"], :simple_id => ["1", "2", "3"]})
+    expect(batch_items.size).to eq 1
 
   end
 

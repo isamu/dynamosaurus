@@ -334,27 +334,32 @@ module Dynamosaurus
         end
       end
 
-      def batch_get_item keys
-        return nil if keys.nil? or keys.empty?
-        Dynamosaurus.logger << "batch_get_item #{table_name} #{keys}"
+      def conv_key_array keys
         if get_key.size == 2
-          my_keys = keys.map{|_key| {get_key[0].to_s => _key.to_s } }
+          keys.map{|_key| {get_key[0].to_s => _key.to_s } }
         else
-          my_keys = []
+          _keys = []
           keys[get_key[0]].each do |key1|
             keys[get_key[2]].each do |key2|
-              my_keys << {
+              _keys << {
                 get_key[0].to_s => key1,
                 get_key[2].to_s => key2,
               }
             end
           end
+          _keys
         end
+      end
+
+      def batch_get_item keys
+        return nil if keys.nil? or keys.empty?
+        Dynamosaurus.logger << "batch_get_item #{table_name} #{keys}"
+        _keys = conv_key_array(keys)
 
         res = dynamo_db.batch_get_item(
           :request_items => {
             table_name => {
-              :keys => my_keys
+              :keys => _keys
             }
           })
 
@@ -392,7 +397,16 @@ module Dynamosaurus
       end
 
       def put hash, num_hash={}, return_values=nil
+        new_hash = put_data(hash, num_hash)
 
+        res = dynamo_db.put_item(
+          :table_name => table_name,
+          :item => new_hash,
+          :return_values => return_values || "NONE"
+        )
+      end
+
+      def put_data hash, num_hash={}
         new_hash = {}
         hash.each{|key, value|
           new_hash[key] = value unless value.nil?
@@ -400,12 +414,46 @@ module Dynamosaurus
         num_hash.merge({:updated_at => Time.now.to_i}).each{|key, value|
           new_hash[key] = value.to_i unless value.nil?
         } if num_hash
+        new_hash
+      end
 
-        res = dynamo_db.put_item(
-          :table_name => table_name,
-          :item => new_hash,
-          :return_values => return_values || "NONE"
+      def batch_write_item put_items = [], delete_items = []
+        return nil if (put_items.nil? or put_items.empty?) and (delete_items.nil? or delete_items.empty?)
+        Dynamosaurus.logger << "batch_write_item #{table_name}"
+
+        requests = []
+        if put_items and put_items.size > 0
+          put_items.each do |item|
+            if item["hash"] or item["num_hash"]
+              new_item = put_data(item["hash"], item["num_hash"])
+            else
+              new_item = item.merge({:updated_at => Time.now.to_i})
+            end
+            requests << {
+              put_request: {
+                item: new_item
+              }
+            }
+          end
+        end
+
+        if delete_items and delete_items.size > 0
+          conv_key_array(delete_items).map{|key|
+            requests << {
+              delete_request: {
+                key: key
+              }
+            }
+          }
+        end
+
+        res = dynamo_db.batch_write_item(
+          request_items: {
+            table_name => requests
+          },
+          return_consumed_capacity: "TOTAL"
         )
+        res
       end
 
       def save hash, num_hash={}, return_values=nil
