@@ -13,3 +13,12 @@ class Comment < Dynamosaurus::DynamoBase
   key :content_id, :string, :message_id, :string
   global_index :user_index, :user_id, :string
 end
+
+class DynamoModelWithTableField < Dynamosaurus::DynamoBase
+  table name: 'table_name'
+  key :content_id, :string, :message_id, :string
+end
+
+class DynamoModelWithoutTableField < Dynamosaurus::DynamoBase
+  key :content_id, :string, :message_id, :string
+end

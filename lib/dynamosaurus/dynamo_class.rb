@@ -55,102 +55,146 @@ module Dynamosaurus
         @table ||= options
       end
 
-      def key k, type, range_key=nil, range_key_type=nil
+      def key k, type, range_key_name=nil, range_key_type=nil
         @key = [k, Dynamosaurus::DynamoBase::TYPES[type]]
-        @key << range_key << Dynamosaurus::DynamoBase::TYPES[range_key_type] if range_key
+        @key << range_key_name << Dynamosaurus::DynamoBase::TYPES[range_key_type] if range_key_name
       end
 
       def get_key
        @key
       end
 
-      def schema
-        @schema = {}
-        @schema[:table_name] = table_name
-        @schema[:key_schema] = []
-        @schema[:attribute_definitions] = []
+      def has_renge
+        @key.size == 4
+      end
 
-        @schema[:provisioned_throughput] = {
-          :read_capacity_units => 10,
-          :write_capacity_units => 10
-        }
+      def hash_key
+        @key[0]
+      end
 
-        @schema[:key_schema]  << {
+      def range_key
+        @key[2]
+      end
+
+      def key_schema
+        key = [{
           :key_type => "HASH",
-          :attribute_name => get_key[0].to_s
-        }
-        @schema[:attribute_definitions] << {:attribute_name => get_key[0].to_s, :attribute_type => get_key[1].to_s.upcase}
+          :attribute_name => hash_key.to_s
+        }]
+        key << {
+          :key_type => "RANGE",
+          :attribute_name => range_key.to_s
+        } if has_renge
+        key
+      end
 
-        if get_key.size == 4
-          @schema[:key_schema]  << {
-            :key_type => "RANGE",
-            :attribute_name => get_key[2].to_s
-          }
-          @schema[:attribute_definitions] << {:attribute_name => get_key[2].to_s, :attribute_type => get_key[3].to_s.upcase}
-        end
+      # schema
+      def attribute_definitions
+        res = [{:attribute_name => hash_key.to_s, :attribute_type => get_key[1].to_s.upcase}]
+        res << {:attribute_name => range_key.to_s, :attribute_type => get_key[3].to_s.upcase} if has_renge
+        res
+      end
 
-        unless get_global_indexes.empty?
-          @schema[:global_secondary_indexes] = []
-          get_global_indexes.each do |g_index|
-            index_schema = {
-              :index_name => g_index[0],
-              :key_schema => [],
-              :projection => {
-                :projection_type => "KEYS_ONLY",
-              },
-              :provisioned_throughput => {
-                :read_capacity_units => 10,
-                :write_capacity_units => 10
-              },
-            }
-            index_schema[:key_schema] << {
-              :key_type => "HASH",
-              :attribute_name => g_index[1][0]
-            }
-            @schema[:attribute_definitions] << {:attribute_name => g_index[1][0].to_s, :attribute_type => g_index[1][1].to_s.upcase}
-            if g_index[1].size == 4
-              index_schema[:key_schema] << {
-                :key_type => "RANGE",
-                :attribute_name => g_index[1][2]
-              }
-              @schema[:attribute_definitions] << {:attribute_name => g_index[1][2].to_s, :attribute_type => g_index[1][3].to_s.upcase}
-            end
-
-            @schema[:global_secondary_indexes] << index_schema
-          end
-        end
-        unless get_secondary_indexes.empty?
-          @schema[:local_secondary_indexes] = []
-          get_secondary_indexes.each do |s_index_key, s_index_value|
-            index_schema = {
-              :index_name => s_index_key,
-              :key_schema => [],
-              :projection => {
-                :projection_type => "KEYS_ONLY",
-              },
-            }
-            index_schema[:key_schema] =[
+      def local_secondary_schemas
+        schema = []
+        get_secondary_indexes.each do |s_index_key, s_index_value|
+          schema << {
+            index_name: s_index_key,
+            key_schema: [],
+            projection: {
+              projection_type: "KEYS_ONLY",
+            },
+            key_schema: [
               {
-                :key_type => "HASH",
-                :attribute_name => s_index_value[0]
+                key_type: "HASH",
+                attribute_name: s_index_value[0]
               },
               {
-                :key_type => "RANGE",
-                :attribute_name => s_index_value[2]
+                key_type: "RANGE",
+                attribute_name: s_index_value[2]
               }
             ]
-            @schema[:attribute_definitions] << {:attribute_name => s_index_value[2].to_s, :attribute_type => s_index_value[3].to_s.upcase}
-            @schema[:local_secondary_indexes] << index_schema
-          end
+          }
+        end
+        schema
+      end
+
+      def global_index_schemas
+        schema = []
+        get_global_indexes.each do |g_index|
+          schema << {
+            :index_name => g_index[0],
+            :key_schema => global_index_key_schema(g_index),
+            :projection => {
+              :projection_type => "KEYS_ONLY",
+            },
+            :provisioned_throughput => {
+              :read_capacity_units => 10,
+              :write_capacity_units => 10
+            }
+          }
+        end
+        schema
+      end
+
+      def global_index_key_schema g_index
+        key_schema = [{
+          :key_type => "HASH",
+          :attribute_name => g_index[1][0]
+        }]
+        key_schema << {
+              :key_type => "RANGE",
+              :attribute_name => g_index[1][2]
+            } if g_index[1].size == 4
+        key_schema
+      end
+
+      def local_secondary_attribute_definitions
+        attribute_definitions = []
+        get_secondary_indexes.each do |s_index_key, s_index_value|
+          attribute_definitions << {:attribute_name => s_index_value[2].to_s, :attribute_type => s_index_value[3].to_s.upcase}
+        end
+        attribute_definitions
+      end
+
+      def global_indexes_attribute_definitions
+        attribute_definitions = []
+        get_global_indexes.each do |g_index|
+          @schema[:attribute_definitions] << {:attribute_name => g_index[1][0].to_s, :attribute_type => g_index[1][1].to_s.upcase}
+          @schema[:attribute_definitions] << {:attribute_name => g_index[1][2].to_s, :attribute_type => g_index[1][3].to_s.upcase} if g_index[1].size == 4
+        end
+        attribute_definitions
+      end
+
+      def schema
+        @schema = {
+          table_name: table_name,
+          key_schema: key_schema,
+          attribute_definitions: attribute_definitions,
+          provisioned_throughput: {
+            read_capacity_units: 10,
+            write_capacity_units: 10
+          }
+        }
+
+        unless get_global_indexes.empty?
+          @schema[:global_secondary_indexes] = global_index_schemas
+          @schema[:attribute_definitions] += global_indexes_attribute_definitions
+        end
+        unless get_secondary_indexes.empty?
+          @schema[:local_secondary_indexes] = local_secondary_schemas
+          @schema[:attribute_definitions] += local_secondary_attribute_definitions
         end
 
         @schema
       end
+      # end of schema
 
-      def global_index index_name, key, key_type, range_key=nil, range_key_type=nil
+      # indexes
+      def global_index index_name, key, key_type, range_key_name=nil, range_key_type=nil
         @global_index = {} if @global_index.nil?
         @global_index[index_name] = [key, Dynamosaurus::DynamoBase::TYPES[key_type]]
-        @global_index[index_name] << range_key <<  Dynamosaurus::DynamoBase::TYPES[range_key_type] if range_key
+        @global_index[index_name] << range_key_name <<  Dynamosaurus::DynamoBase::TYPES[range_key_type] if range_key_name
       end
 
       def get_global_indexes
@@ -161,9 +205,9 @@ module Dynamosaurus
         @global_index[name]
       end
 
-      def secondary_index index_name, range_key=nil, range_key_type=nil
+      def secondary_index index_name, range_key_name=nil, range_key_type=nil
         @secondary_index = {} if @secondary_index.nil?
-        @secondary_index[index_name.to_sym] = [@key[0], @key[1], range_key, Dynamosaurus::DynamoBase::TYPES[range_key_type]] if range_key
+        @secondary_index[index_name.to_sym] = [@key[0], @key[1], range_key_name, Dynamosaurus::DynamoBase::TYPES[range_key_type]] if range_key_name
       end
 
       def get_secondary_indexes
@@ -193,19 +237,10 @@ module Dynamosaurus
         }
         nil
       end
+      # end of indexes
 
       def table_prefix name
         @table_prefix = name
-      end
-
-      def key_list
-        keys = get_key + get_secondary_indexes.values.flatten
-        list = {}
-        until keys.empty?
-          convi = keys.shift(2)
-          list[convi[0]] = convi[1]
-        end
-        list
       end
 
       def res2hash hash
@@ -214,7 +249,7 @@ module Dynamosaurus
         hash
       end
 
-
+      # query
       def query_without_index value, option
         keys = {}
 
@@ -231,12 +266,12 @@ module Dynamosaurus
       def get_item_key value
         if value.is_a? Array
           {
-            get_key[0] => value[0].to_s,
-            get_key[2] => value[1].to_s,
+            hash_key => value[0].to_s,
+            range_key => value[1].to_s,
           }
         else
           {
-            get_key[0] => value.to_s,
+            hash_key => value.to_s,
           }
         end
       end
@@ -308,6 +343,7 @@ module Dynamosaurus
           end
         end
       end
+      # end of query
 
       # public method
       def get value, option={}
@@ -335,8 +371,8 @@ module Dynamosaurus
       end
 
       def get_orderd_key_from_hash hash
-        get_orderd_key( (hash[get_key[0].to_sym] || hash[get_key[0].to_s]),
-                       (hash[get_key[2].to_sym] || hash[get_key[2].to_s]))
+        get_orderd_key( (hash[hash_key.to_sym] || hash[hash_key.to_s]),
+                       (hash[range_key.to_sym] || hash[range_key.to_s]))
       end
 
       def get_orderd_key_from_array array
@@ -345,14 +381,14 @@ module Dynamosaurus
 
       def get_orderd_key value1, value2
         {
-          get_key[0].to_s => value1,
-            get_key[2].to_s => value2
+          hash_key.to_s => value1,
+            range_key.to_s => value2
         }
       end
 
       def conv_key_array keys
-        if get_key.size == 2
-          keys.map{|_key| {get_key[0].to_s => _key.to_s } }
+        unless has_renge
+          keys.map{|_key| {hash_key.to_s => _key.to_s } }
         else
           if keys.is_a?(Array)
             if keys[0].is_a?(Array)
@@ -364,8 +400,8 @@ module Dynamosaurus
             end
           else
             _keys = []
-            ((p_key = keys[get_key[0]]).is_a?(Array) ? p_key : [p_key]).each do |key1|
-              if (r_key = keys[get_key[2]]).is_a?(Array)
+            ((p_key = keys[hash_key]).is_a?(Array) ? p_key : [p_key]).each do |key1|
+              if (r_key = keys[range_key]).is_a?(Array)
                 r_key.each do |key2|
                   _keys << get_orderd_key(key1, key2)
                 end
@@ -485,12 +521,11 @@ module Dynamosaurus
 
       def save hash, num_hash={}, return_values=nil
         put(hash, num_hash, return_values)
-        my_keys = get_key
 
-        if my_keys.size == 4
-          get([hash[my_keys[0]], hash[my_keys[2]]])
+        if has_renge
+          get([hash[hash_key], hash[range_key]])
         else
-          get(hash[my_keys[0]])
+          get(hash[hash_key])
         end
       end
 
@@ -505,11 +540,10 @@ module Dynamosaurus
           }
         end
 
-        class_key = get_key
         keys = {
-          class_key[0].to_sym => key.is_a?(Array) ? key[0] : key
+          hash_key.to_sym => key.is_a?(Array) ? key[0] : key
         }
-        keys[class_key[2].to_sym] = key[1]  if class_key.size > 2
+        keys[range_key.to_sym] = key[1]  if has_renge
 
         query ={
           :table_name => table_name,

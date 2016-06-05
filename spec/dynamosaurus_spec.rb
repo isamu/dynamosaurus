@@ -112,6 +112,7 @@ describe Dynamosaurus do
     kvs.num = 100
     kvs.save
 
+
     kvs = SimpleKVS.first
     expect(kvs.num).to eq 100
 
@@ -134,6 +135,9 @@ describe Dynamosaurus do
     kvs = SimpleKVS.get("key3")
     expect(kvs).to be_nil
 
+    res = SimpleKVS.save({:simple_key => "key4"}, {:num => 3})
+    expect(res.simple_key).to eq "key4"
+    expect(res.num).to eq 3
   end
 
   it 'internel method test' do
@@ -207,11 +211,6 @@ describe Dynamosaurus do
 
   describe 'table options' do
     context 'when table-name is given' do
-      class DynamoModelWithTableField < Dynamosaurus::DynamoBase
-        table name: 'table_name'
-        key :content_id, :string, :message_id, :string
-      end
-
       it_should_behave_like 'Basic CRUD' do
         let!(:model_name) { 'DynamoModelWithTableField' }
       end
@@ -220,10 +219,6 @@ describe Dynamosaurus do
     end
 
     context 'when table-name is not given' do
-      class DynamoModelWithoutTableField < Dynamosaurus::DynamoBase
-        key :content_id, :string, :message_id, :string
-      end
-
       it_should_behave_like 'Basic CRUD' do
         let!(:model_name) { 'DynamoModelWithoutTableField' }
       end
