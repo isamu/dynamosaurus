@@ -97,9 +97,9 @@ module Dynamosaurus
 
       def local_secondary_schemas
         schema = []
-        get_secondary_indexes.each do |s_index_key, s_index_value|
+        get_secondary_indexes.each do |index_key, index_value|
           schema << {
-            index_name: s_index_key,
+            index_name: index_key,
             key_schema: [],
             projection: {
               projection_type: "KEYS_ONLY",
@@ -107,11 +107,11 @@ module Dynamosaurus
             key_schema: [
               {
                 key_type: "HASH",
-                attribute_name: s_index_value[0]
+                attribute_name: index_value[0]
               },
               {
                 key_type: "RANGE",
-                attribute_name: s_index_value[2]
+                attribute_name: index_value[2]
               }
             ]
           }
@@ -121,10 +121,10 @@ module Dynamosaurus
 
       def global_index_schemas
         schema = []
-        get_global_indexes.each do |g_index|
+        get_global_indexes.each do |index|
           schema << {
-            :index_name => g_index[0],
-            :key_schema => global_index_key_schema(g_index),
+            :index_name => index[0],
+            :key_schema => global_index_key_schema(index),
             :projection => {
               :projection_type => "KEYS_ONLY",
             },
@@ -137,31 +137,31 @@ module Dynamosaurus
         schema
       end
 
-      def global_index_key_schema g_index
+      def global_index_key_schema index
         key_schema = [{
           :key_type => "HASH",
-          :attribute_name => g_index[1][0]
+          :attribute_name => index[1][0]
         }]
         key_schema << {
               :key_type => "RANGE",
-              :attribute_name => g_index[1][2]
-            } if g_index[1].size == 4
+              :attribute_name => index[1][2]
+            } if index[1].size == 4
         key_schema
       end
 
       def local_secondary_attribute_definitions
         attribute_definitions = []
-        get_secondary_indexes.each do |s_index_key, s_index_value|
-          attribute_definitions << {:attribute_name => s_index_value[2].to_s, :attribute_type => s_index_value[3].to_s.upcase}
+        get_secondary_indexes.each do |index_key, index_value|
+          attribute_definitions << {:attribute_name => index_value[2].to_s, :attribute_type => index_value[3].to_s.upcase}
         end
         attribute_definitions
       end
 
       def global_indexes_attribute_definitions
         attribute_definitions = []
-        get_global_indexes.each do |g_index|
-          @schema[:attribute_definitions] << {:attribute_name => g_index[1][0].to_s, :attribute_type => g_index[1][1].to_s.upcase}
-          @schema[:attribute_definitions] << {:attribute_name => g_index[1][2].to_s, :attribute_type => g_index[1][3].to_s.upcase} if g_index[1].size == 4
+        get_global_indexes.each do |index|
+          @schema[:attribute_definitions] << {:attribute_name => index[1][0].to_s, :attribute_type => index[1][1].to_s.upcase}
+          @schema[:attribute_definitions] << {:attribute_name => index[1][2].to_s, :attribute_type => index[1][3].to_s.upcase} if index[1].size == 4
         end
         attribute_definitions
       end
