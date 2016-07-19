@@ -97,6 +97,18 @@ module Dynamosaurus
       res = dynamo_db.update_item(query)
     end
 
+    def add attribute_nums={}, options={}
+      if self.class.has_renge
+        key_value = [@data[key[0].to_s], @data[key[2].to_s]]
+      else
+        key_value = @data[key[0].to_s]
+      end
+      attribute_nums.each do |k, v|
+        @data[k.to_s] = @data[k.to_s] + v.to_i
+      end
+      self.class.add(key_value, attribute_nums, options)
+    end
+
     def save
       attribute_updates = {}
       @data.each do |k, v|
