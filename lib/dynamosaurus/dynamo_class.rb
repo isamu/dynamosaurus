@@ -89,10 +89,22 @@ module Dynamosaurus
       end
 
       # schema
+      def push_attribute_definitions name, type
+        if @attribute_definitions.nil?
+          @attribute_definitions = []
+          @attribute_names = []
+        end
+        if @attribute_names.index(name).nil?
+          @attribute_definitions << {:attribute_name => name, :attribute_type => type}
+          @attribute_names << name
+        end
+      end
+      def set_init_attribute_definitions
+        push_attribute_definitions(hash_key.to_s,  get_key[1].to_s.upcase)
+        push_attribute_definitions(range_key.to_s, get_key[3].to_s.upcase) if has_renge
+      end
       def attribute_definitions
-        res = [{:attribute_name => hash_key.to_s, :attribute_type => get_key[1].to_s.upcase}]
-        res << {:attribute_name => range_key.to_s, :attribute_type => get_key[3].to_s.upcase} if has_renge
-        res
+        @attribute_definitions
       end
 
       def local_secondary_schemas
@@ -150,27 +162,24 @@ module Dynamosaurus
       end
 
       def local_secondary_attribute_definitions
-        attribute_definitions = []
         get_secondary_indexes.each do |index_key, index_value|
-          attribute_definitions << {:attribute_name => index_value[2].to_s, :attribute_type => index_value[3].to_s.upcase}
+          push_attribute_definitions(index_value[2].to_s, index_value[3].to_s.upcase)
         end
-        attribute_definitions
       end
 
       def global_indexes_attribute_definitions
-        attribute_definitions = []
         get_global_indexes.each do |index|
-          @schema[:attribute_definitions] << {:attribute_name => index[1][0].to_s, :attribute_type => index[1][1].to_s.upcase}
-          @schema[:attribute_definitions] << {:attribute_name => index[1][2].to_s, :attribute_type => index[1][3].to_s.upcase} if index[1].size == 4
+          push_attribute_definitions(index[1][0].to_s, index[1][1].to_s.upcase)
+          push_attribute_definitions(index[1][2].to_s, index[1][3].to_s.upcase) if index[1].size == 4
         end
-        attribute_definitions
       end
 
       def schema
+        set_init_attribute_definitions
+
         @schema = {
           table_name: table_name,
           key_schema: key_schema,
-          attribute_definitions: attribute_definitions,
           provisioned_throughput: {
             read_capacity_units: 10,
             write_capacity_units: 10
@@ -179,12 +188,13 @@ module Dynamosaurus
 
         unless get_global_indexes.empty?
           @schema[:global_secondary_indexes] = global_index_schemas
-          @schema[:attribute_definitions] += global_indexes_attribute_definitions
+          global_indexes_attribute_definitions
         end
         unless get_secondary_indexes.empty?
           @schema[:local_secondary_indexes] = local_secondary_schemas
-          @schema[:attribute_definitions] += local_secondary_attribute_definitions
+          local_secondary_attribute_definitions
         end
+        @schema[:attribute_definitions] = attribute_definitions
 
         @schema
       end

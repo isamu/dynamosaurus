@@ -22,3 +22,8 @@ end
 class DynamoModelWithoutTableField < Dynamosaurus::DynamoBase
   key :content_id, :string, :message_id, :string
 end
+
+class Like < Dynamosaurus::DynamoBase
+  key :object_id, :string, :user_id, :string
+  global_index :user_index, :user_id, :string
+end
