@@ -334,9 +334,12 @@ module Dynamosaurus
 
       def query keys, index=nil, option={}
         query = {
-          :table_name => table_name,
-          :key_conditions => keys,
+          :table_name => table_name
         }
+        unless keys.nil? || keys.empty?
+          query[:key_conditions] = keys
+        end
+
         if index
           query[:index_name] = index
         end

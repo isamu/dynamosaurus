@@ -2,7 +2,7 @@ require 'spec_helper'
 
 describe Dynamosaurus::DynamoBase do
   before(:all) do
-    ENV['DYNAMODB_SUFFIX'] = "_local"
+    ENV['DYNAMODB_SUFFIX'] = "_local2"
 
     Aws.config = {
       :endpoint => "http://localhost:8000",

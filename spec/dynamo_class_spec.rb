@@ -19,8 +19,8 @@ describe Dynamosaurus::DynamoBase do
   end
 
   it 'simple ordered kvs test' do
-    expect(Dynamosaurus::DynamoBase.all_models).to match_array [Like, DynamoModelWithoutTableField, DynamoModelWithTableField, Comment, SimpleOrderedKVS, SimpleKVS]
-    expect(Dynamosaurus::DynamoBase.tables).to match_array  ["comment_local", "dynamomodelwithouttablefield_local", "like_local", "simplekvs_local", "simpleorderedkvs_local", "table_name"]
+    expect(Dynamosaurus::DynamoBase.all_models).to match_array [Follow, Like, DynamoModelWithoutTableField, DynamoModelWithTableField, Comment, SimpleOrderedKVS, SimpleKVS]
+    expect(Dynamosaurus::DynamoBase.tables).to match_array  ["comment_local", "dynamomodelwithouttablefield_local", "follow_local", "like_local", "simplekvs_local", "simpleorderedkvs_local", "table_name"]
 
     expect(SimpleOrderedKVS.table_name).to match "simpleorderedkvs_local"
     expect(SimpleOrderedKVS.get_key).to match_array [:simple_key, :s, :simple_id, :s]

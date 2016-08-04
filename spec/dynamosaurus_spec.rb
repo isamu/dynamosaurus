@@ -71,6 +71,19 @@ describe Dynamosaurus do
     batch_items = SimpleOrderedKVS.batch_get_item({:simple_key => ["key"], :simple_id => ["1", "2", "3"]})
     expect(batch_items.size).to eq 1
 
+    orderd_items2 = SimpleOrderedKVS.get({
+        index: "updated_at_index",
+      },
+      {
+        scan_index_forward: false,
+        limit: 50,
+        key_condition_expression: "simple_key = :v_simple_key and updated_at > :v_updated_at",
+        expression_attribute_values: {
+          ":v_simple_key" => "key",
+          ":v_updated_at" =>  0
+        }
+      })
+
   end
 
   it 'simple kvs test' do

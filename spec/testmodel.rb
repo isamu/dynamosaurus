@@ -27,3 +27,10 @@ class Like < Dynamosaurus::DynamoBase
   key :object_id, :string, :user_id, :string
   global_index :user_index, :user_id, :string
 end
+
+class Follow < Dynamosaurus::DynamoBase
+  key :user_id, :string, :from_user_id, :string
+
+  secondary_index :updated_at_index, :updated_at, :number
+  global_index :from_user_index, :from_user_id, :string, :updated_at, :number
+end
