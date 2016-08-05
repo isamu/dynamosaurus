@@ -32,8 +32,10 @@ describe Dynamosaurus do
     expect(kvs.simple_key).to eq "key"
     expect(kvs.simple_id).to eq "1"
 
-    SimpleOrderedKVS.get(["key", "1"])
+    kvs = SimpleOrderedKVS.get(["key", "1"])
     expect(kvs.simple_id).to eq "1"
+    expect(kvs["simple_id"]).to eq "1"
+    expect(kvs[:simple_id]).to eq "1"
 
     sleep 1
     SimpleOrderedKVS.put({:simple_key => "key", :simple_id => "3"})

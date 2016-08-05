@@ -21,11 +21,11 @@ module Dynamosaurus
     end
 
     def [] key
-      @data[key]
+      @data[key.to_s]
     end
 
     def []=(key,value)
-      @data[key] = value
+      @data[key.to_s] = value
     end
 
     def data
