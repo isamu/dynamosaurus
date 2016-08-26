@@ -26,6 +26,7 @@ end
 class Like < Dynamosaurus::DynamoBase
   key :object_id, :string, :user_id, :string
   global_index :user_index, :user_id, :string
+  global_index_option :user_index, {projection_type: "ALL"}
 end
 
 class Follow < Dynamosaurus::DynamoBase

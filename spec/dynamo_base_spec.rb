@@ -2,11 +2,11 @@ require 'spec_helper'
 
 describe Dynamosaurus::DynamoBase do
   before(:all) do
-    ENV['DYNAMODB_SUFFIX'] = "_local2"
+    ENV['DYNAMODB_SUFFIX'] = "_local_spec"
 
     Aws.config = {
       :endpoint => "http://localhost:8000",
-      :region => 'local_test',
+      :region => 'local_test_spec',
     }
     Dynamosaurus::DynamoBase.create_tables
   end

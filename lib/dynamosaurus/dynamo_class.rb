@@ -132,13 +132,16 @@ module Dynamosaurus
       end
 
       def global_index_schemas
+        @global_index_option = {} if @global_index_option.nil?
         schema = []
         get_global_indexes.each do |index|
+          option = @global_index_option[index[0]] || {}
+
           schema << {
             :index_name => index[0],
             :key_schema => global_index_key_schema(index),
             :projection => {
-              :projection_type => "KEYS_ONLY",
+              :projection_type => (option[:projection_type] || "KEYS_ONLY"),
             },
             :provisioned_throughput => {
               :read_capacity_units => 10,
@@ -205,6 +208,11 @@ module Dynamosaurus
         @global_index = {} if @global_index.nil?
         @global_index[index_name] = [key, Dynamosaurus::DynamoBase::TYPES[key_type]]
         @global_index[index_name] << range_key_name <<  Dynamosaurus::DynamoBase::TYPES[range_key_type] if range_key_name
+      end
+
+      def global_index_option index_name, option
+        @global_index_option = {} if @global_index_option.nil?
+        @global_index_option[index_name] = option
       end
 
       def get_global_indexes
