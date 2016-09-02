@@ -33,5 +33,6 @@ class Follow < Dynamosaurus::DynamoBase
   key :user_id, :string, :from_user_id, :string
 
   secondary_index :updated_at_index, :updated_at, :number
+  secondary_index_option :updated_at_index, {projection_type: "ALL"}
   global_index :from_user_index, :from_user_id, :string, :updated_at, :number
 end

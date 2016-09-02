@@ -108,13 +108,15 @@ module Dynamosaurus
       end
 
       def local_secondary_schemas
+        @secondary_index_option = {} if @secondary_index_option.nil?
         schema = []
         get_secondary_indexes.each do |index_key, index_value|
+          option = @secondary_index_option[index_key] || {}
           schema << {
             index_name: index_key,
             key_schema: [],
             projection: {
-              projection_type: "KEYS_ONLY",
+              :projection_type => (option[:projection_type] || "KEYS_ONLY"),
             },
             key_schema: [
               {
@@ -226,6 +228,11 @@ module Dynamosaurus
       def secondary_index index_name, range_key_name=nil, range_key_type=nil
         @secondary_index = {} if @secondary_index.nil?
         @secondary_index[index_name.to_sym] = [@key[0], @key[1], range_key_name, Dynamosaurus::DynamoBase::TYPES[range_key_type]] if range_key_name
+      end
+
+      def secondary_index_option index_name, option
+        @secondary_index_option = {} if @secondary_index_option.nil?
+        @secondary_index_option[index_name] = option
       end
 
       def get_secondary_indexes
