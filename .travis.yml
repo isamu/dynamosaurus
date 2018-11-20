@@ -6,6 +6,8 @@ jdk:
 install:
   - mkdir /tmp/dynamodb
   - wget -O - https://s3-ap-northeast-1.amazonaws.com/dynamodb-local-tokyo/dynamodb_local_latest.tar.gz | tar xz --directory /tmp/dynamodb
+bundler_args: "--without development --deployment -j4"
+cache: bundler
 before_script:
   - java -Djava.library.path=/tmp/dynamodb/DynamoDBLocal_lib -jar /tmp/dynamodb/DynamoDBLocal.jar -sharedDb -inMemory &
   - sleep 2
