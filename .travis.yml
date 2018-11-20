@@ -10,5 +10,5 @@ install:
 bundler_args: --deployment
 cache: bundler
 before_script:
-  - java -Djava.library.path=/tmp/dynamodb/DynamoDBLocal_lib -jar /tmp/dynamodb/DynamoDBLocal.jar -sharedDb -inMemory &
-  - sleep 2
+  - java -Djava.library.path=/tmp/dynamodb/DynamoDBLocal_lib -jar /tmp/dynamodb/DynamoDBLocal.jar -dbPath /tmp/dynamodb/db &
+  - sleep 4
