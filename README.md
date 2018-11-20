@@ -94,6 +94,15 @@ Or install it yourself as:
     # automatically use global index    
     comments = Comment.get({:user_id => "abc"})
 
+## note
+    if Aws::config.empty?
+      @dynamo_db = Aws::DynamoDB::Client.new(
+        :endpoint => "http://localhost:8000",
+        :region => "us-west-1"
+      )
+    else
+       @dynamo_db = Aws::DynamoDB::Client.new
+    end
 
 
 ## Contributing
