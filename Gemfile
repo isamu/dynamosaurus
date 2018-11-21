@@ -5,3 +5,5 @@ gemspec
 
 gem 'aws-sdk'
 gem 'rspec'
+gem 'rspec_junit_formatter'
+
