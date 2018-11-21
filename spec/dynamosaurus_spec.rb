@@ -215,6 +215,13 @@ describe Dynamosaurus do
 
       it{ is_expected.to eq 2 }
     end
+
+    context 'get all' do
+      subject { Comment.rangeGetList("1") }
+
+      it { is_expected.to eq 2 }
+      
+    end
   end
 
   describe 'table options' do

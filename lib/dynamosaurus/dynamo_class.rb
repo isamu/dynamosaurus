@@ -349,6 +349,68 @@ module Dynamosaurus
         end
       end
 
+      def query_of_all(params, offset_key, limit = 20, scan_index_forward = true)
+        params[:limit] = limit + 1
+        params[:scan_index_forward] = scan_index_forward;
+        
+        p params
+        res = dynamo_db.query(params)
+
+        items = []
+        
+        if res.items
+          items = res.items.map{|item|
+            new :data => item
+          }
+        end
+        
+        ret[table_name] = items
+        ret[:count] = [item.count, limit].min
+        
+        if (res[:count] > limit) 
+          ret[:next] = res.items[limit][offset_key]
+        end
+      end
+
+      def rangeGetList(data, limit = 20, scan_index_forward = true, options={})
+        pkey = hash_key
+        rkey = range_key
+        params = data.is_a?(Array) ?
+          (scan_index_forward ? 
+           rangeKeyQuery("#pkey = :pkey_value and #rkey >= :rkey_value", [pkey, rkey], data) :
+           rangeKeyQuery("#pkey = :pkey_value and #rkey <= :rkey_value", [pkey, rkey], data)) :
+          keyQuery("#pkey = :pkey_value", pkey, data)
+        res =  query_of_all(params.merge(options), rkey, limit, scan_index_forward)
+      end
+
+      def keyQuery(expression, pkey, data) 
+        params = {
+          table_name: table_name,
+          key_condition_expression: expression,
+          expression_attribute_names: {
+            "#pkey" => pkey,
+          },
+          expression_attribute_values: {
+            ":pkey_value" => data,
+          }
+        }
+      end
+      
+      def rangeKeyQuery(expression, keys, data) 
+        params = {
+          table_name: table_name,
+          key_condition_expression: expression,
+          expression_attribute_names:{
+            "#pkey" => hash_key,
+            "#rkey" => range_key,
+          },
+          expression_attribute_values: {
+            ":pkey_value" => data[0],
+            ":rkey_value" => data[1],
+          }
+        }
+      end
+      
       def query keys, index=nil, option={}
         query = {
           :table_name => table_name
@@ -492,11 +554,12 @@ module Dynamosaurus
       def put hash, num_hash={}, return_values=nil
         new_hash = put_data(hash, num_hash)
 
-        res = dynamo_db.put_item(
+        params = {
           :table_name => table_name,
           :item => new_hash,
           :return_values => return_values || "NONE"
-        )
+        }
+        res = dynamo_db.put_item(params)
       end
 
       def put_data hash, num_hash={}
