@@ -22,6 +22,6 @@ Gem::Specification.new do |spec|
   spec.add_development_dependency "rake"
   spec.add_development_dependency "rspec"
 
-  spec.add_runtime_dependency 'aws-sdk-core', ">= 2.0.20"
-
+  spec.add_runtime_dependency 'aws-sdk', ">= 3.0"
+  spec.add_runtime_dependency 'deep_merge'
 end
