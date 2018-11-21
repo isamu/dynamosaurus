@@ -41,7 +41,10 @@ jobs:
       - run: mkdir /tmp/dynamodb
       - run: wget -O - https://s3-ap-northeast-1.amazonaws.com/dynamodb-local-tokyo/dynamodb_local_latest.tar.gz | tar xz --directory /tmp/dynamodb
       # - run: java -Djava.library.path=/tmp/dynamodb/DynamoDBLocal_lib -jar /tmp/dynamodb/DynamoDBLocal.jar -dbPath /tmp/dynamodb/db &
-      - run: java -Xms1024m -Xmx1024m -Djava.library.path=/tmp/dynamodb/DynamoDBLocal_lib -jar /tmp/dynamodb/DynamoDBLocal.jar &
+      - run:
+          name: dynamodb
+          command: java -Xms1024m -Xmx1024m -Djava.library.path=/tmp/dynamodb/DynamoDBLocal_lib -jar /tmp/dynamodb/DynamoDBLocal.jar
+          background: true
       - run: sleep 4
             
       - save_cache:
