@@ -42,10 +42,12 @@ module Dynamosaurus
       def dynamo_db
         return @dynamo_db if @dynamo_db
         if Aws::config.empty?
-          @dynamo_db = Aws::DynamoDB::Client.new(
-            :endpoint => "http://localhost:8000",
-            :region => "us-west-1"
-          )
+          @dynamo_db = Aws::DynamoDB::Client.new({
+                                                  endpoint: 'http://localhost:8000',
+                                                  region: 'us-west-2',
+                                                  access_key_id: 'fakeMyKeyId',
+                                                  secret_access_key: 'fakeSecretAccessKey'
+                                                 })
         else
           @dynamo_db = Aws::DynamoDB::Client.new
         end
