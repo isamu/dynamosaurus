@@ -255,7 +255,7 @@ module Dynamosaurus
               :index_name => key,
               :keys => [value[0]]
             }
-          else hash.size == 2 && hash.keys.sort == [value[0], value[2]].sort
+          elsif hash.size == 2 && hash.keys.sort == [value[0], value[2]].sort
             return {
               :index_name => key,
               :keys => [value[0], value[2]]
@@ -361,7 +361,7 @@ module Dynamosaurus
           query[:index_name] = index
         end
 
-        query.merge!(option)
+        query.deep_merge!(option)
         res = dynamo_db.query(query)
         if query[:select] == "COUNT"
           res[:count]
