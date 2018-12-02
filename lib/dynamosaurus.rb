@@ -2,6 +2,7 @@ require "dynamosaurus/version"
 require "dynamosaurus/dynamo_base"
 require "dynamosaurus/dynamo_class"
 require "dynamosaurus/logger"
+require "deep_merge"
 
 module Dynamosaurus
   class << self

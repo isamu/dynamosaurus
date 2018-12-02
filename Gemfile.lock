@@ -1,7 +1,7 @@
 PATH
   remote: .
   specs:
-    dynamosaurus (0.1.7)
+    dynamosaurus (0.1.8)
       aws-sdk (>= 3.0)
       deep_merge
 
