@@ -1,3 +1,6 @@
+[![Build Status](https://travis-ci.org/isamu/dynamosaurus.svg)](https://travis-ci.org/isamu/dynamosaurus)
+[![Gem Version](https://badge.fury.io/rb/dynamosaurus.svg)](https://badge.fury.io/rb/dynamosaurus)
+
 # Dynamosaurus
 
 Dynamosaurus is Amazon DynamoDB ORMapper.
